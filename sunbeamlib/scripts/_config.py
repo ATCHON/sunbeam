@@ -100,7 +100,7 @@ def update(args):
         config.dump(updated_config, args.out)
 
 def modify(args):
-    update_src = args.str if args.str else args.file
+    update_src = args.str or args.file
     new_values = ruamel.yaml.safe_load(update_src)
     if isinstance(new_values, str) and args.str:
         raise SystemExit(

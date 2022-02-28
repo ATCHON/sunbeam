@@ -72,8 +72,7 @@ def summarize_qual_decontam(tfile, dfile, paired_end):
     return(pandas.DataFrame(OrderedDict(trim_data, **(decontam_data)), index=[tname]))
 
 def parse_fastqc_quality(filename):
-    with open(filename) as f:
-        report = f.read()
+    report = Path(filename).read_text()
     tableString = re.search(
         '\>\>Per base sequence quality.*?\n(.*?)\n\>\>END_MODULE',
         report, re.DOTALL).group(1)

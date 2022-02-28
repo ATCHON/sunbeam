@@ -21,27 +21,27 @@ def main(argv=sys.argv):
         help="Path to Sunbeam installation")
 
     args = parser.parse_args(argv)
-    
+
     extensions_dir = Path(args.sunbeam_dir)/"extensions"
     if not extensions_dir.exists():
         sys.stderr.write(
             "Error: could not find an extensions directory in '{}'\n".format(
                 args.sunbeam_dir))
         sys.exit(1)
-    
+
     # handle odd github url formats that make `git clone` mad
     gh_url = args.github_url.strip()
     if gh_url.endswith('/'):
         gh_url = gh_url[:-1]
     extension_name = gh_url.split("/")[-1]
-    
+
     if extension_name.endswith(".git"):
         extension_name = extension_name[:-4]
 
     git_clone_args = ["git","clone",gh_url,str(extensions_dir/extension_name)]
 
-    sys.stderr.write("Installing "+extension_name+" from "+gh_url+"\n")
+    sys.stderr.write(f"Installing {extension_name} from {gh_url}" + "\n")
 
     cmd = subprocess.run(git_clone_args)
-    
+
     sys.exit(cmd.returncode)

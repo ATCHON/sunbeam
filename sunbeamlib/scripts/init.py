@@ -144,7 +144,12 @@ def write_config(args, project_fp, samplelists):
     multiple_configs = len(samplelists.values()) != 1
     for layout in samplelists.keys(): # one paired, one unpaired, or one of each
         if multiple_configs:
-            config_file = check_existing(project_fp/Path(layout+"_"+str(Path(project_fp/args.output).name)), args.force)
+            config_file = check_existing(
+                project_fp
+                / Path(f'{layout}_{str(Path(project_fp/args.output).name)}'),
+                args.force,
+            )
+
         else:
             config_file = check_existing(project_fp/args.output, args.force)
         cfg = config.new(

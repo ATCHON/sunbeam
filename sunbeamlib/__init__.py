@@ -63,16 +63,16 @@ def guess_format_string(fnames, paired_end=True, split_pattern="([_\.])"):
         raise SampleFormatError("need a list of filenames, not a string")
     if len(fnames) > 1 and len(set(fnames)) == 1:
         raise SampleFormatError("all filenames are the same")
-    if len(set(fnames)) == 0:
+    if not set(fnames):
         raise SampleFormatError("no files in directory!")
-    
+
     splits = [list(reversed(re.split(split_pattern, fname))) for fname in fnames]
 
     if len(fnames) == 1:
         sys.stderr.write("Only one sample found; defaulting to {sample}.fastq.gz\n")
         return "{sample}.fastq.gz"
-    
-    if len(set([len(p) for p in splits])) > 1:
+
+    if len({len(p) for p in splits}) > 1:
         sys.stderr.write("Warning: samples have inconsistent numbers of _ or . characters\n")
 
     elements = []
@@ -92,29 +92,20 @@ def guess_format_string(fnames, paired_end=True, split_pattern="([_\.])"):
         elif len(items) == 1 and not potential_single_sample:
             elements.append(parts[0])
         else:
-            if paired_end:
-                # If all the items in a split end with 1 or 2, and only have
-                # one char preceding that that's the same among all items,
-                # OR all the items are 1 or 2 and the only things in a split,
-                # then it's likely a read-pair identifier.
-                if set(_[-1] for _ in items) == {'1', '2'}:
-                    prefixes = set(_[:-1] for _ in items)
-                    NO_PREFIX = prefixes == {''}
-                    ALL_SAME_PREFIX = len(prefixes) == 1
-                    ONE_CHAR_PREFIX = all(len(p) == 1 for p in prefixes)
-                    I_OR_R_PREFIX = prefixes == {'I', 'R'}
-                    if NO_PREFIX or (ALL_SAME_PREFIX and ONE_CHAR_PREFIX) or I_OR_R_PREFIX:
-                        if I_OR_R_PREFIX:
-                            prefix = 'R'
-                        else:
-                            prefix = parts[0][:-1]
-                        elements.append("{rp}")
-                        elements.append(prefix)
-                        continue
-            variant_idx.append(i)                        
+            if paired_end and {_[-1] for _ in items} == {'1', '2'}:
+                prefixes = {_[:-1] for _ in items}
+                NO_PREFIX = prefixes == {''}
+                ALL_SAME_PREFIX = len(prefixes) == 1
+                ONE_CHAR_PREFIX = all(len(p) == 1 for p in prefixes)
+                I_OR_R_PREFIX = prefixes == {'I', 'R'}
+                if NO_PREFIX or (ALL_SAME_PREFIX and ONE_CHAR_PREFIX) or I_OR_R_PREFIX:
+                    prefix = 'R' if I_OR_R_PREFIX else parts[0][:-1]
+                    elements.extend(("{rp}", prefix))
+                    continue
+            variant_idx.append(i)
             elements.append("{sample}")
     # Combine multiple variant elements
-    if len(variant_idx) > 0:
+    if variant_idx:
         _min = min(variant_idx)
         _max = max(variant_idx)
         elements[_min+1:_max+2] = ["{sample}"]
@@ -154,11 +145,7 @@ def circular(seq, kmin, kmax, min_len):
     """
     if len(seq) < min_len:
         return False
-    # Short-circuit checking: returns True for the first kmer that matches
-    for k in range(kmin, kmax+1):
-        if seq[0:k] == seq[len(seq)-k:]:
-            return True
-    return False
+    return any(seq[:k] == seq[len(seq)-k:] for k in range(kmin, kmax+1))
 
 def read_seq_ids(fasta_fp):
     """

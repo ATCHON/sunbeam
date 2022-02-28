@@ -28,7 +28,7 @@ def get_coverage_stats(genome_name, bamfile, sample, output_fp):
             data[row[0]] = []
         data[row[0]].append(int(row[2]))
     # Summarize stats for all segments present and append to output
-    for segment in data.keys():
+    for segment in data:
         minval     = numpy.min(data[segment])
         maxval     = numpy.max(data[segment])
         mean       = numpy.mean(data[segment])

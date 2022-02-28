@@ -47,22 +47,20 @@ def build_sample_list(data_fp, format_str, output_file, is_single_end):
 
     data_fp = data_fp.resolve()
     fnames = [f.name for f in data_fp.iterdir() if f.is_file()]
-    
+
     if not format_str:
         sys.stderr.write(
             "Guessing sample name format from files in {}...\n".format(data_fp))
         format_str = guess_format_string(fnames, not is_single_end)
         sys.stderr.write("  Best guess: {}\n".format(format_str))
-        
+
     samples = find_samples(data_fp, format_str)
 
     # Check for mate pairs if single end
     if not is_single_end:
-        no_match = []
-        for sample, reads in samples.items():
-            if '2' not in reads:
-                no_match.append(sample)
-        if len(no_match) > 0:
+        if no_match := [
+            sample for sample, reads in samples.items() if '2' not in reads
+        ]:
             raise MissingMatePairError(
                 "missing mate pairs for samples: {} ".format(
                     ", ".join(no_match)))
@@ -93,9 +91,8 @@ def find_samples(data_fp, filename_fmt):
     for f in files:
         fpath = f[0]
         wcards = f[1]
-        rp = wcards.get('rp')
-        if rp:
-            if not rp in ['1', '2']:
+        if rp := wcards.get('rp'):
+            if rp not in ['1', '2']:
                 raise ValueError(
                     "'{rp}' should capture just '1' or '2' in filename, nothing else")
             Samples[wcards['sample']][rp] = fpath
@@ -120,7 +117,7 @@ def build_sample_list_sra(accessions, project_fp, force):
     fmt = "Found {} samples, {}.\n"
     cases = ["unpaired", "paired"]
     files = {}
-    if lengths == {1} or lengths == {2}:
+    if lengths in [{1}, {2}]:
         # OK, either all paired or all unpaired.
         case = cases[list(lengths)[0] - 1]
         sys.stderr.write(fmt.format(len(samples), case))

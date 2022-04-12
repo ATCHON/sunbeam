@@ -20,9 +20,9 @@ def main():
         target = args.prefix/Path(line.strip())
         # FIXME: Check if zero-sized
         if not target.exists():
-            raise SystemExit("Target '{}' not found".format(target))
+            raise SystemExit(f"Target '{target}' not found")
         else:
-            print("Found target '{}'".format(target))
+            print(f"Found target '{target}'")
 
 
 if __name__ == "__main__":

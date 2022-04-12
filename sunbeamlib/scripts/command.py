@@ -30,8 +30,12 @@ def main():
 
     parser.add_argument("command", help=argparse.SUPPRESS, nargs="?")
     parser.add_argument(
-        "-v", "--version", action="version",
-        version="%(prog)s v{}".format(sunbeamlib.__version__))
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s v{sunbeamlib.__version__}",
+    )
+
 
     args, remaining = parser.parse_known_args()
 

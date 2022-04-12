@@ -27,7 +27,7 @@ def blast_summary(blast_files, blast_format="blast-xml"):
                         'hit':result.hits[0].id
                     }
         except ParseError:
-            print("Skipping empty/malformed %s" % infile)
+            print(f"Skipping empty/malformed {infile}")
             continue
 
 def blast_contig_summary(xml_files):
@@ -72,11 +72,13 @@ def summarize_qual_decontam(tfile, dfile, paired_end):
     return(pandas.DataFrame(OrderedDict(trim_data, **(decontam_data)), index=[tname]))
 
 def parse_fastqc_quality(filename):
-    with open(filename) as f:
-        report = f.read()
+    report = Path(filename).read_text()
     tableString = re.search(
         '\>\>Per base sequence quality.*?\n(.*?)\n\>\>END_MODULE',
-        report, re.DOTALL).group(1)
+        report,
+        re.DOTALL,
+    )[1]
+
 
     f_s = StringIO(tableString)
     df = pandas.read_csv(

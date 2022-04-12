@@ -17,7 +17,7 @@ def verify(path):
     if path.exists():
         return path.resolve()
     else:
-        raise ValueError("Path %s does not exist" % path)
+        raise ValueError(f"Path {path} does not exist")
     
     
 def validate_paths(cfg, root):
@@ -32,7 +32,7 @@ def validate_paths(cfg, root):
     :param cfg: a config file subsection
     :returns: an updated copy of cfg
     """
-    new_cfg = dict()
+    new_cfg = {}
     for k, v in cfg.items():
         if k.endswith('_fp'):
             v = makepath(v)
@@ -57,14 +57,13 @@ def check_compatibility(cfg):
 def check_config(cfg):
     """Resolve root in config file, then validate paths."""
     
-    if 'root' in cfg['all']:
-        root = verify(cfg['all']['root'])
-    else:
-        root = Path.cwd()
+    root = verify(cfg['all']['root']) if 'root' in cfg['all'] else Path.cwd()
     # Iteratively check paths for each subsection
-    new_cfg = dict()
-    for section, values in cfg.items():
-        new_cfg[section] = validate_paths(values, root)
+    new_cfg = {
+        section: validate_paths(values, root)
+        for section, values in cfg.items()
+    }
+
     new_cfg['all']['root'] = root
     return new_cfg
 
@@ -94,10 +93,7 @@ def _update_dict(target, new):
         if isinstance(v, collections.Mapping):
             # We could use .get() here but ruamel.yaml's weird Mapping
             # subclass outputs errors to stdout if the key doesn't exist
-            if k in target:
-                target[k] = _update_dict(target[k], v)
-            else:
-                target[k] = _update_dict({}, v)
+            target[k] = _update_dict(target[k], v) if k in target else _update_dict({}, v)
         else:
             target[k] = v
     return target
@@ -119,8 +115,7 @@ def update(config_str, new, strict=False):
         config = _update_dict_strict(config, new)
     else:
         config = _update_dict(config, new)
-        sbx_config = ruamel.yaml.round_trip_load(extension_config())
-        if sbx_config:
+        if sbx_config := ruamel.yaml.round_trip_load(extension_config()):
             config = _update_dict(config, sbx_config)
     return config
 
@@ -134,7 +129,7 @@ def new(
         config = str(resource_stream(
             "sunbeamlib", "data/default_config.yml").read().decode())
         # add config from extensions
-        config = config + extension_config()
+        config += extension_config()
 
     return config.format(
         PROJECT_FP=project_fp,
@@ -151,17 +146,17 @@ def extension_config():
         if 'config.yml' in sbx_files:
             # append it to the existing config
             sbx_config_fp = sunbeam_dir/"extensions"/sbx/"config.yml"
-            sbx_configfile = open(sbx_config_fp)
-            sbx_config = "\n"+sbx_configfile.read()
-            sbx_configfile.close() 
+            with open(sbx_config_fp) as sbx_configfile:
+                sbx_config = "\n"+sbx_configfile.read()
             config = str(config + sbx_config)
     return config
 
 def load_defaults(default_name):
     return ruamel.yaml.safe_load(
-        resource_stream(
-            "sunbeamlib", "data/{}.yml".format(default_name)
-        ).read().decode())
+        resource_stream("sunbeamlib", f"data/{default_name}.yml")
+        .read()
+        .decode()
+    )
     
 def dump(config, out=sys.stdout):
     if isinstance(config, collections.Mapping):
